@@ -1,0 +1,180 @@
+﻿@inherits BaseComponent
+
+@using AppReview.Shared.Models.Review;
+@using AppReview.Shared.Models.Common;
+@using Services;
+
+@page "/reviews"
+
+@inject ReviewService reviewService;
+
+<PageTitle>Reviews</PageTitle>
+
+<h1>Manage Reviews</h1>
+
+<div class="mt-3">
+    <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Please select an application:</RadzenText>
+    
+    <div class="row">
+        <div class="col-8">
+            <RadzenDropDown AllowClear="true" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@selectedAppId Placeholder="Select..." Data=@apps TextProperty="Name" ValueProperty="Id" Class="w-100 h-100">
+                <Template>
+                    <img src="@((context as PublishedApp).IconUrl)" /> @((context as PublishedApp).Name)
+                </Template>
+            </RadzenDropDown>
+        </div>
+        <div class="col-4">
+            <RadzenButton Click=@(args => RefreshReviews()) Icon="refresh" Text="Refresh" ButtonStyle="ButtonStyle.Success" />
+        </div>
+    </div>
+
+
+</div>
+
+@if (reviews is not null && reviews.Any())
+{
+    <div class="row mt-3">
+        <div class="col-10">
+            <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" 
+                        AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                        Data="@reviews" TItem="Review" LogicalFilterOperator="LogicalFilterOperator.Or"  >
+                <Columns>
+
+                    <RadzenDataGridColumn TItem="Review" Sortable="false" Filterable="false" Width="40px">
+                        <Template Context="data">
+                            <RadzenButton Click=@(args => ViewReview(data)) Icon="visibility" ButtonStyle="ButtonStyle.Success" />
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="Review" Property="AuthorName" Title="Author Name" Width="150px" />
+
+                    <RadzenDataGridColumn TItem="Review" Title="Rating" Sortable="false" Filterable="false" Width="200px">
+                        <Template Context="data">
+                            @DisplayStarRating(data.Comments[0].StarRating)
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="Review" Title="" Sortable="false" Filterable="false" Width="100px">
+                        <Template Context="data">
+                            <span class='oi oi-thumb-up fs-4'></span>@data.Comments[0].ThumbsUpCount
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="Review" Title="" Sortable="false" Filterable="false" Width="100px">
+                        <Template Context="data">
+                            <span class='oi oi-thumb-down fs-4'></span>@data.Comments[0].ThumbsDownCount
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="Review" Title="Comment" Sortable="false" Filterable="false" Width="300px">
+                        <Template Context="data">
+                            @{ string comment = data.Comments[0].Text; }
+                            @if (comment.Length > 100)
+                            {
+                                <span>@comment.Substring(0,100)...</span>
+                            }
+                            else
+                            {
+                                <span>@comment</span>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+}
+else
+{
+    <span>No Reviews Found</span>
+}
+
+
+
+
+@code {
+    private List<Review> reviews;
+    private List<PublishedApp> apps;
+    private string selectedAppId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        RetrieveApps();
+    }
+
+    protected async override void OnAfterRender(bool firstRender)
+    {
+
+    }
+
+    private async void RefreshReviews()
+    {
+        if (string.IsNullOrEmpty(selectedAppId))
+        {
+            notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Please select an App.",
+                });
+            return;
+        }
+
+        var reviewResults = await reviewService.GetReviewsAsync(selectedAppId);
+
+        if (reviewResults is not null)
+        {
+            reviews = reviewResults.Reviews;
+        }
+
+        StateHasChanged();
+    }
+
+    private async void ViewReview(Review review)
+    {
+        var result = await dialogService.OpenAsync<Shared.ReviewDetails>($"Review Details",
+        new Dictionary<string, object>() {
+            { "review", review },
+                },
+        new DialogOptions() { Width = "700px", Height = "600px" });
+
+        //we could make changes to the review here in the real world :-) 
+    }
+
+    private async void RetrieveApps()
+    {
+        //add apps manually for demo
+
+        apps = new List<PublishedApp>();
+
+        apps.Add(new PublishedApp
+            {
+                Id = "com.Trailmix.LoveAndPiesMerge",
+                Name = "Love & Pies",
+                IconUrl = "https://play-lh.googleusercontent.com/hjyEYPf3EV4F0xnyk-8kEHsvEve-umZRH-9fZwWdJZ8RjS7HTuxFTS1EEe29z1kar3bi=s56-rw"
+            });
+
+        apps.Add(new PublishedApp
+            {
+                Id = "com.king.candycrushsaga",
+                Name = "Candy Crush Saga",
+                IconUrl = "https://play-lh.googleusercontent.com/i5SrIMUsbfFb8Wue7Ke5ZIy-G63UWha1DloJX9BeJJmInDrk9_ZM334BgoXsyzY5hoU=s48-rw"
+            });
+
+    }
+
+    private MarkupString DisplayStarRating(int rating)
+    {
+        string returnHtml = "";
+
+        for(int i = 0; i < rating; i++)
+        {
+            returnHtml += "<span class='oi oi-star fs-4'></span>";
+        }
+
+        return new MarkupString(returnHtml);
+    }
+
+}
+
+

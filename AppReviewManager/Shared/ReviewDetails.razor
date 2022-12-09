@@ -1,0 +1,52 @@
+﻿@using AppReview.Shared.Models.Review;
+
+@inject Radzen.DialogService dialogService;
+
+<div class="container position-relative" style="min-height: 680px">
+    @if (review != null)
+    {
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label for="name" class="col-form-label">Author Name</label>
+                    <input id="name" class="form-control" @bind="review.AuthorName" />
+                </div>
+                <div class="form-group">
+                    <label for="comment" class="col-form-label">Comment</label>
+                    <textarea rows="4" id="comment" class="form-control" @bind="review.Comments[0].Text" />
+                </div>
+                <div class="form-group">
+                    <label for="Device" class="col-form-label">Device</label>
+                    <input id="Device" class="form-control" @bind="review.Comments[0].Device" />
+                </div>
+                <div class="form-group">
+                    <label for="AndroidOsVersion" class="col-form-label">Android Os Version</label>
+                    <input id="AndroidOsVersion" class="form-control" @bind="review.Comments[0].AndroidOsVersion" />
+                </div>
+                <div class="form-group">
+                    <label for="AppVersionName" class="col-form-label">App Version Name</label>
+                    <input id="AppVersionName" class="form-control" @bind="review.Comments[0].AppVersionName" />
+                </div>
+                <div class="form-group">
+                    <label for="ProductName" class="col-form-label">Device Name</label>
+                    <input id="ProductName" class="form-control" @bind="review.Comments[0].DeviceMetadata.ProductName" />
+                </div>
+                <div class="form-group">
+                    <label for="Manufacturer" class="col-form-label">Manufacturer</label>
+                    <input id="Manufacturer" class="form-control" @bind="review.Comments[0].DeviceMetadata.Manufacturer" />
+                </div>
+                <div class="position-absolute bottom-0 end-0 mb-3">
+                    <RadzenButton Click=@(args => dialogService.Close(true)) Text="Close" ButtonStyle="ButtonStyle.Success" />
+                </div>
+            </div>
+        </div>
+
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public Review review { get; set; }
+
+}
